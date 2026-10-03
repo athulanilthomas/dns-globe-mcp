@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -20,5 +21,12 @@ func main() {
 	pingTool := internalmcp.PingTool{}
 	mcp.AddTool(server, pingTool.Meta(), pingTool.Implementation)
 
-	log.Println("MCP server instance created:", "dns-globe-mcp v0.1.0")
+	mux := http.NewServeMux()
+	mux.Handle("/mcp", internalmcp.Handler(server))
+
+	log.Println("MCP server listening on", config.Port, "at /mcp")
+
+	if err := http.ListenAndServe(config.Port, mux); err != nil {
+		log.Fatal("server failed:", err)
+	}
 }

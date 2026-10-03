@@ -5,10 +5,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func NewServer(cfg config.Config) *mcp.Server {
+func NewServer(cfg *config.Config) *mcp.Server {
 	impl := &mcp.Implementation{
-		Name:    cfg.Name,
-		Version: cfg.Version,
+		Name:    cfg.MCP.Name,
+		Version: cfg.MCP.Version,
 	}
 
 	server := mcp.NewServer(impl, nil)
