@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 
+	"github.com/athulanilthomas/dns-globe-mcp/server/internal/dns"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -10,31 +11,42 @@ type Tool[I any, O any] interface {
 	Meta() *mcp.Tool
 	Implementation(ctx context.Context, req *mcp.CallToolRequest, input I) (*mcp.CallToolResult, O, error)
 }
+type DnsPropagationTool struct{}
 
-type PingTool struct{}
-
-type PingToolInput struct {
-	Name string `json:"name" jsonschema:"the name of the person to greet"`
+type DnsPropagationInput struct {
+	Domain     string `json:"domain" jsonschema:"the domain name to check, e.g. example.com"`
+	RecordType string `json:"recordType" jsonschema:"DNS record type, e.g. A, AAAA, MX, TXT"`
 }
 
-type PingToolOutput struct {
-	Greeting string `json:"greeting" jsonschema:"the greeting to tell to the user"`
+type DnsPropagationOutput struct {
+	Results []dns.RegionResult `json:"results"`
 }
 
-func (ping *PingTool) Meta() *mcp.Tool {
+func (t *DnsPropagationTool) Meta() *mcp.Tool {
 	return &mcp.Tool{
-		Name:        "ping",
-		Description: "Ping Tool",
+		Name:        "check_dns_propagation",
+		Description: "Checks DNS propagation for a domain across multiple global regions",
 	}
 }
 
-func (ping *PingTool) Implementation(ctx context.Context, req *mcp.CallToolRequest, input PingToolInput) (
+func (t *DnsPropagationTool) Implementation(ctx context.Context, req *mcp.CallToolRequest, input DnsPropagationInput) (
 	*mcp.CallToolResult,
-	PingToolOutput,
+	DnsPropagationOutput,
 	error,
 ) {
-	return nil, PingToolOutput{Greeting: "Hi " + input.Name}, nil
+	results, err := dns.CheckPropagation(input.Domain, input.RecordType)
+	if err != nil {
+		return nil, DnsPropagationOutput{}, err
+	}
+
+	result := &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: "DNS propagation checked across regions. See embedded widget for details."},
+			UIResourceContent("ui://dns-globe/widget", "http://localhost:5172/index.html"),
+		},
+	}
+
+	return result, DnsPropagationOutput{Results: results}, nil
 }
 
-// Comil time check
-var _ Tool[PingToolInput, PingToolOutput] = (*PingTool)(nil)
+var _ Tool[DnsPropagationInput, DnsPropagationOutput] = (*DnsPropagationTool)(nil)

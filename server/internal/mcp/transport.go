@@ -11,6 +11,6 @@ func Handler(server *mcp.Server) http.Handler {
 		func(r *http.Request) *mcp.Server {
 			return server
 		},
-		nil,
+		&mcp.StreamableHTTPOptions{Stateless: true},
 	)
 }
