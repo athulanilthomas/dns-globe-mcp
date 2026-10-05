@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DNS Globe</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <div class="globe" id="globe">
+        <canvas id="cobe" aria-label="DNS propagation globe. Drag to rotate."></canvas>
+      </div>
+
+      <section class="panel" aria-live="polite">
+        <h1 class="domain" id="domain">Waiting for results…</h1>
+
+        <div class="progress" id="progress" role="img" aria-label="Propagation progress"></div>
+        <ul class="summary" id="summary"></ul>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
