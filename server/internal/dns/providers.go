@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-var providers = []dohProvider{
+var providers = []DoHProvider{
 	{
 		name: "Cloudflare",
 		lat:  37.77,
