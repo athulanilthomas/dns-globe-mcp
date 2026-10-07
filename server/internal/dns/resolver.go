@@ -33,10 +33,8 @@ func appendResolverResult(res *RegionResult, results *ResolverResults) {
 	results.mu.Unlock()
 }
 
-func resolveDNS(reqParams DoHRequest, wg *sync.WaitGroup, results *ResolverResults) {
+func resolveDNS(reqParams DoHRequest, results *ResolverResults) {
 	base := RegionResult{Resolver: reqParams.provider.name, Lat: reqParams.provider.lat, Lng: reqParams.provider.lng}
-
-	defer wg.Done()
 
 	req, err := http.NewRequest("GET", reqParams.provider.url(reqParams.domain, reqParams.recordType), nil)
 	if err != nil {
@@ -100,7 +98,7 @@ func CheckDNSPropagation(domain string, recordType string) ([]RegionResult, erro
 	for _, r := range providers {
 		reqParams := DoHRequest{provider: &r, domain: domain, recordType: recordType}
 		wg.Go(func() {
-			resolveDNS(reqParams, wg, &results)
+			resolveDNS(reqParams, &results)
 		})
 	}
 
