@@ -5,7 +5,14 @@ import (
 	"net/url"
 )
 
-var providers = []DoHProvider{
+type dohProvider struct {
+	name     string
+	lat, lng float64
+	url      func(domain, recordType string) string
+	headers  map[string]string
+}
+
+var providers = []dohProvider{
 	{
 		name: "Cloudflare",
 		lat:  37.77,

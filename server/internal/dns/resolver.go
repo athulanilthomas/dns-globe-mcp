@@ -12,20 +12,13 @@ type ResolverResults struct {
 	mu      sync.RWMutex
 }
 
-type DoHProvider struct {
-	name     string
-	lat, lng float64
-	url      func(domain, recordType string) string
-	headers  map[string]string
-}
-
 type DoHRequest struct {
-	provider   *DoHProvider
+	provider   *dohProvider
 	domain     string
 	recordType string
 }
 
-type DoHResponse struct {
+type dohResponse struct {
 	Status int `json:"Status"`
 	Answer []struct {
 		Data string `json:"data"`
@@ -65,7 +58,13 @@ func resolveDNS(reqParams DoHRequest, wg *sync.WaitGroup, results *ResolverResul
 
 	defer res.Body.Close()
 
-	var parsed DoHResponse
+	if res.StatusCode >= http.StatusBadRequest {
+		base.Status = "pending"
+		appendResolverResult(&base, results)
+		return
+	}
+
+	var parsed dohResponse
 	dec := json.NewDecoder(res.Body)
 
 	if err := dec.Decode(&parsed); err != nil {
