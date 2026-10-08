@@ -34,7 +34,7 @@ func (t *DnsPropagationTool) Implementation(ctx context.Context, req *mcp.CallTo
 	DnsPropagationOutput,
 	error,
 ) {
-	results, err := dns.CheckDNSPropagation(input.Domain, input.RecordType)
+	results, err := dns.CheckDNSPropagation(ctx, input.Domain, input.RecordType)
 	if err != nil {
 		return nil, DnsPropagationOutput{}, err
 	}

@@ -2,6 +2,7 @@ package dns
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -77,12 +78,6 @@ func assertAnswer(rr *dnsmessage.Resource) string {
 
 var client = &http.Client{Timeout: 10 * time.Second}
 
-func appendResolverResult(res *RegionResult, results *ResolverResults) {
-	results.mu.Lock()
-	results.results = append(results.results, *res)
-	results.mu.Unlock()
-}
-
 func buildQuery(domain string, recordType dnsmessage.Type) ([]byte, error) {
 	name, err := dnsmessage.NewName(domain + ".")
 	if err != nil {
@@ -99,7 +94,7 @@ func buildQuery(domain string, recordType dnsmessage.Type) ([]byte, error) {
 	return msg.Pack()
 }
 
-func resolveDNS(reqParams DoHRequest, results *ResolverResults) {
+func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
 	base := RegionResult{
 		Resolver: reqParams.provider.name,
 		Lat:      reqParams.provider.lat,
@@ -109,26 +104,23 @@ func resolveDNS(reqParams DoHRequest, results *ResolverResults) {
 	recordType, err := mapRecordType(reqParams.recordType)
 	if err != nil {
 		base.Status = "pending"
-		appendResolverResult(&base, results)
-		return
+		return base
 	}
 
 	query, err := buildQuery(reqParams.domain, recordType)
 	if err != nil {
 		base.Status = "pending"
-		appendResolverResult(&base, results)
-		return
+		return base
 	}
 
-	req, err := http.NewRequest(http.MethodPost, reqParams.provider.url, bytes.NewReader(query))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqParams.provider.url, bytes.NewReader(query))
 	req.Header.Add("accept", "application/dns-message")
 	req.Header.Add("content-type", "application/dns-message")
 
 	res, err := client.Do(req)
 	if err != nil {
 		base.Status = "pending"
-		appendResolverResult(&base, results)
-		return
+		return base
 	}
 
 	defer res.Body.Close()
@@ -136,8 +128,7 @@ func resolveDNS(reqParams DoHRequest, results *ResolverResults) {
 	resBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		base.Status = "pending"
-		appendResolverResult(&base, results)
-		return
+		return base
 	}
 
 	msg := new(dnsmessage.Message)
@@ -150,31 +141,28 @@ func resolveDNS(reqParams DoHRequest, results *ResolverResults) {
 
 	if len(records) == 0 {
 		base.Status = "pending"
-		appendResolverResult(&base, results)
-		return
+		return base
 	}
 
 	base.Status = "resolved"
 	base.Records = records
 
-	appendResolverResult(&base, results)
+	return base
 }
 
-func CheckDNSPropagation(domain string, recordType string) ([]RegionResult, error) {
+func CheckDNSPropagation(ctx context.Context, domain string, recordType string) ([]RegionResult, error) {
 	wg := &sync.WaitGroup{}
 
-	results := ResolverResults{
-		results: make([]RegionResult, 0, len(providers)),
-	}
+	results := make([]RegionResult, len(providers))
 
-	for _, r := range providers {
+	for i, r := range providers {
 		reqParams := DoHRequest{provider: &r, domain: domain, recordType: recordType}
 		wg.Go(func() {
-			resolveDNS(reqParams, &results)
+			results[i] = resolveDNS(ctx, reqParams)
 		})
 	}
 
 	wg.Wait()
 
-	return results.results, nil
+	return results, nil
 }
