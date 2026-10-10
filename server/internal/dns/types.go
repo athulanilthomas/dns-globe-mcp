@@ -7,6 +7,7 @@ const (
 	StatusStale    status = "stale"
 	StatusPending  status = "pending"
 	StatusError    status = "error"
+	StatusNXDomain status = "nxdomain"
 )
 
 type RegionResult struct {

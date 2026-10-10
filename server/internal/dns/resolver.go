@@ -73,6 +73,8 @@ func buildQuery(domain string, recordType dnsmessage.Type) ([]byte, error) {
 		domain += "."
 	}
 
+	domain = strings.ToLower(strings.TrimSpace(domain))
+
 	name, err := dnsmessage.NewName(domain)
 	if err != nil {
 		return nil, err
@@ -100,9 +102,7 @@ func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, reqParams.provider.url, bytes.NewReader(reqParams.query))
 	if err != nil {
-		base.Status = StatusError
-		base.Error = err.Error()
-		return base
+		return fail(base, err)
 	}
 
 	req.Header.Add("accept", "application/dns-message")
@@ -110,27 +110,30 @@ func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
 
 	res, err := client.Do(req)
 	if err != nil || res.StatusCode >= http.StatusBadRequest {
-		base.Status = StatusError
-		base.Error = err.Error()
-		return base
+		return fail(base, err)
 	}
 
 	defer res.Body.Close()
 
 	resBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		base.Status = StatusError
-		base.Error = err.Error()
-		return base
+		return fail(base, err)
 	}
 
 	msg := new(dnsmessage.Message)
 
 	unpackError := msg.Unpack(resBytes)
 	if unpackError != nil {
-		base.Status = StatusError
-		base.Error = unpackError.Error()
+		return fail(base, err)
+	}
+
+	switch msg.RCode {
+	case dnsmessage.RCodeSuccess:
+	case dnsmessage.RCodeNameError:
+		base.Status = StatusNXDomain
 		return base
+	default:
+		return fail(base, fmt.Errorf("DNS error: %v", msg.RCode))
 	}
 
 	records := make([]string, 0, len(msg.Answers))
@@ -147,6 +150,12 @@ func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
 	base.Records = records
 
 	return base
+}
+
+func fail(r RegionResult, err error) RegionResult {
+	r.Status = StatusError
+	r.Error = err.Error()
+	return r
 }
 
 func CheckDNSPropagation(ctx context.Context, domain string, recordType string) ([]RegionResult, error) {
