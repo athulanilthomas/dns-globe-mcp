@@ -14,15 +14,9 @@ import (
 	"golang.org/x/net/dns/dnsmessage"
 )
 
-type ResolverResults struct {
-	results []RegionResult
-	mu      sync.RWMutex
-}
-
 type DoHRequest struct {
-	provider   *dohProvider
-	domain     string
-	recordType string
+	provider *dohProvider
+	query    []byte
 }
 
 func mapRecordType(recordType string) (dnsmessage.Type, error) {
@@ -41,16 +35,12 @@ func mapRecordType(recordType string) (dnsmessage.Type, error) {
 		return dnsmessage.TypeTXT, nil
 	case "SOA":
 		return dnsmessage.TypeSOA, nil
-	case "PTR":
-		return dnsmessage.TypePTR, nil
-	case "SRV":
-		return dnsmessage.TypeSRV, nil
 	default:
 		return 0, fmt.Errorf("unsupported DNS record type: %q", recordType)
 	}
 }
 
-func assertAnswer(rr *dnsmessage.Resource) string {
+func formatRecord(rr *dnsmessage.Resource) string {
 	var record string
 
 	switch body := rr.Body.(type) {
@@ -76,10 +66,14 @@ func assertAnswer(rr *dnsmessage.Resource) string {
 	return record
 }
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var client = &http.Client{}
 
 func buildQuery(domain string, recordType dnsmessage.Type) ([]byte, error) {
-	name, err := dnsmessage.NewName(domain + ".")
+	if !strings.HasSuffix(domain, ".") {
+		domain += "."
+	}
+
+	name, err := dnsmessage.NewName(domain)
 	if err != nil {
 		return nil, err
 	}
@@ -101,25 +95,23 @@ func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
 		Lng:      reqParams.provider.lng,
 	}
 
-	recordType, err := mapRecordType(reqParams.recordType)
+	reqCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, reqParams.provider.url, bytes.NewReader(reqParams.query))
 	if err != nil {
-		base.Status = "pending"
+		base.Status = StatusError
+		base.Error = err.Error()
 		return base
 	}
 
-	query, err := buildQuery(reqParams.domain, recordType)
-	if err != nil {
-		base.Status = "pending"
-		return base
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqParams.provider.url, bytes.NewReader(query))
 	req.Header.Add("accept", "application/dns-message")
 	req.Header.Add("content-type", "application/dns-message")
 
 	res, err := client.Do(req)
-	if err != nil {
-		base.Status = "pending"
+	if err != nil || res.StatusCode >= http.StatusBadRequest {
+		base.Status = StatusError
+		base.Error = err.Error()
 		return base
 	}
 
@@ -127,24 +119,31 @@ func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
 
 	resBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		base.Status = "pending"
+		base.Status = StatusError
+		base.Error = err.Error()
 		return base
 	}
 
 	msg := new(dnsmessage.Message)
-	msg.Unpack(resBytes)
 
-	records := make([]string, 0, len(msg.Answers))
-	for _, rec := range msg.Answers {
-		records = append(records, assertAnswer(&rec))
-	}
-
-	if len(records) == 0 {
-		base.Status = "pending"
+	unpackError := msg.Unpack(resBytes)
+	if unpackError != nil {
+		base.Status = StatusError
+		base.Error = unpackError.Error()
 		return base
 	}
 
-	base.Status = "resolved"
+	records := make([]string, 0, len(msg.Answers))
+	for _, rec := range msg.Answers {
+		records = append(records, formatRecord(&rec))
+	}
+
+	if len(records) == 0 {
+		base.Status = StatusPending
+		return base
+	}
+
+	base.Status = StatusResolved
 	base.Records = records
 
 	return base
@@ -155,8 +154,18 @@ func CheckDNSPropagation(ctx context.Context, domain string, recordType string) 
 
 	results := make([]RegionResult, len(providers))
 
+	mappedType, err := mapRecordType(recordType)
+	if err != nil {
+		return nil, err
+	}
+
+	query, err := buildQuery(domain, mappedType)
+	if err != nil {
+		return nil, err
+	}
+
 	for i, r := range providers {
-		reqParams := DoHRequest{provider: &r, domain: domain, recordType: recordType}
+		reqParams := DoHRequest{provider: &r, query: query}
 		wg.Go(func() {
 			results[i] = resolveDNS(ctx, reqParams)
 		})
