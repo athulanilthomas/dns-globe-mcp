@@ -14,11 +14,6 @@ import (
 	"golang.org/x/net/dns/dnsmessage"
 )
 
-type DoHRequest struct {
-	provider *dohProvider
-	query    []byte
-}
-
 func mapRecordType(recordType string) (dnsmessage.Type, error) {
 	switch strings.ToUpper(strings.TrimSpace(recordType)) {
 	case "A":
@@ -90,17 +85,17 @@ func buildQuery(domain string, recordType dnsmessage.Type) ([]byte, error) {
 	return msg.Pack()
 }
 
-func resolveDNS(ctx context.Context, reqParams DoHRequest) RegionResult {
+func resolveDNS(ctx context.Context, provider *dohProvider, query []byte) RegionResult {
 	base := RegionResult{
-		Resolver: reqParams.provider.name,
-		Lat:      reqParams.provider.lat,
-		Lng:      reqParams.provider.lng,
+		Resolver: provider.name,
+		Lat:      provider.lat,
+		Lng:      provider.lng,
 	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, reqParams.provider.url, bytes.NewReader(reqParams.query))
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, provider.url, bytes.NewReader(query))
 	if err != nil {
 		return fail(base, err)
 	}
@@ -173,10 +168,9 @@ func CheckDNSPropagation(ctx context.Context, domain string, recordType string) 
 		return nil, err
 	}
 
-	for i, r := range providers {
-		reqParams := DoHRequest{provider: &r, query: query}
+	for i, p := range providers {
 		wg.Go(func() {
-			results[i] = resolveDNS(ctx, reqParams)
+			results[i] = resolveDNS(ctx, &p, query)
 		})
 	}
 
