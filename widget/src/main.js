@@ -1,18 +1,21 @@
 import createGlobe from "cobe";
-import { SAMPLE } from "./data.js";
 
-const STATUSES = ["resolved", "stale", "pending"];
+const STATUSES = ["resolved", "stale", "pending", "error", "nxdomain"];
 
 const STATUS_RGB = {
   resolved: [0.09, 0.64, 0.29],
   stale: [0.92, 0.55, 0.05],
   pending: [0.45, 0.45, 0.5],
+  error: [166, 25, 46],
+  nxdomain: [246, 130, 31]
 };
 
 const STATUS_TEXT = {
   resolved: "Resolved",
   stale: "Stale",
   pending: "Pending",
+  error: "Error",
+  nxdomain: "Non Existant"
 };
 
 const $ = (id) => document.getElementById(id);
@@ -106,7 +109,7 @@ function renderGlobe(results) {
     const pyramid = el("div", "pyramid");
     for (let i = 0; i < 4; i++) pyramid.append(el("div", "pyramid-face"));
     const chip = el("span", "site-chip");
-    chip.append(el("span", "dot"), el("span", "site-name", r.region.toLowerCase()), el("span", "site-status", r.status));
+    chip.append(el("span", "dot"), el("span", "site-name", r.resolver.toLowerCase()), el("span", "site-status", r.status));
     node.append(pyramid, chip);
     anchorTo(node, `--cobe-${r.id}`, `--cobe-visible-${r.id}`);
     overlays.push(node);
@@ -147,8 +150,8 @@ function focus(results) {
   phi = Math.PI - (toRad(target.lng) - Math.PI / 2);
 }
 
-function setResults(regionResults) {
-  const results = regionResults.map((r, i) => ({ ...r, id: `region-${i}` }));
+function setResults(resolverResults) {
+  const results = resolverResults.map((r, i) => ({ ...r, id: `resolver-${i}` }));
   renderGlobe(results);
   renderPanel(results);
   focus(results);
@@ -168,4 +171,4 @@ function render(sample) {
 
 window.updateGlobe = render;
 
-render(SAMPLE);
+render(window.__DNS_DATA__ ?? []);

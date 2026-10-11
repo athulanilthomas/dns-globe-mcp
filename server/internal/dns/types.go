@@ -1,9 +1,20 @@
 package dns
 
+type status string
+
+const (
+	StatusResolved status = "resolved"
+	StatusStale    status = "stale"
+	StatusPending  status = "pending"
+	StatusError    status = "error"
+	StatusNXDomain status = "nxdomain"
+)
+
 type RegionResult struct {
-	Region  string   `json:"region"`
-	Lat     float64  `json:"lat"`
-	Lng     float64  `json:"lng"`
-	Status  string   `json:"status"` // "resolved" | "stale" | "pending"
-	Records []string `json:"records"`
+	Resolver string   `json:"resolver"`
+	Lat      float64  `json:"lat"`
+	Lng      float64  `json:"lng"`
+	Status   status   `json:"status"`
+	Records  []string `json:"records"`
+	Error    string   `json:"error"`
 }
