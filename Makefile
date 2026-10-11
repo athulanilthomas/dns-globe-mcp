@@ -14,3 +14,11 @@ call-dns-propagation:
 		--header 'MCP-Protocol-Version: 2025-11-25' \
 		--data-binary "$$request" \
 		"$(MCP_URL)"
+
+.PHONY: clean-widget build-widget
+clean-widget:
+	@mkdir -p server/internal/mcp/widget
+	@find server/internal/mcp/widget -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+
+build-widget: clean-widget
+	cd widget && pnpm build --outDir ../server/internal/mcp/widget

@@ -19,7 +19,9 @@ type DnsPropagationInput struct {
 }
 
 type DnsPropagationOutput struct {
-	Results []dns.RegionResult `json:"results"`
+	Domain     string             `json:"domain"`
+	RecordType string             `json:"recordType"`
+	Results    []dns.RegionResult `json:"results"`
 }
 
 func (t *DnsPropagationTool) Meta() *mcp.Tool {
@@ -42,7 +44,11 @@ func (t *DnsPropagationTool) Implementation(ctx context.Context, req *mcp.CallTo
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: "DNS propagation checked across regions. See embedded widget for details."},
-			UIResourceContent("ui://dns-globe/widget", "http://localhost:5172/index.html"),
+			UIResourceContent("ui://dns-globe/widget", DnsPropagationOutput{
+				Domain:     input.Domain,
+				RecordType: input.RecordType,
+				Results:    results,
+			}),
 		},
 	}
 
