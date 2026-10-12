@@ -41,14 +41,20 @@ func (t *DnsPropagationTool) Implementation(ctx context.Context, req *mcp.CallTo
 		return nil, DnsPropagationOutput{}, err
 	}
 
+	ui, err := UIResourceContent("ui://dns-globe/widget", DnsPropagationOutput{
+		Domain:     input.Domain,
+		RecordType: input.RecordType,
+		Results:    results,
+	})
+
+	if err != nil {
+		return nil, DnsPropagationOutput{}, err
+	}
+
 	result := &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: "DNS propagation checked across regions. See embedded widget for details."},
-			UIResourceContent("ui://dns-globe/widget", DnsPropagationOutput{
-				Domain:     input.Domain,
-				RecordType: input.RecordType,
-				Results:    results,
-			}),
+			ui,
 		},
 	}
 

@@ -28,8 +28,12 @@ func RenderWidget(data any) (string, error) {
 	return strings.Replace(widgetHTML, dataPlaceholder, string(payload), 1), nil
 }
 
-func UIResourceContent(uri string, data any) *mcp.EmbeddedResource {
-	html, _ := RenderWidget(data)
+func UIResourceContent(uri string, data any) (*mcp.EmbeddedResource, error) {
+	html, err := RenderWidget(data)
+
+	if err != nil {
+		return nil, err
+	}
 
 	resource := mcp.EmbeddedResource{Resource: &mcp.ResourceContents{
 		URI:      uri,
@@ -37,5 +41,5 @@ func UIResourceContent(uri string, data any) *mcp.EmbeddedResource {
 		MIMEType: "text/html",
 	}}
 
-	return &resource
+	return &resource, nil
 }

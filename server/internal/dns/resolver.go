@@ -61,7 +61,15 @@ func formatRecord(rr *dnsmessage.Resource) string {
 	return record
 }
 
-var client = &http.Client{}
+var client = &http.Client{
+	Transport: func() *http.Transport {
+		t := http.DefaultTransport.(*http.Transport).Clone()
+		t.MaxIdleConns = 100
+		t.MaxIdleConnsPerHost = 20
+		t.MaxConnsPerHost = 50
+		return t
+	}(),
+}
 
 func buildQuery(domain string, recordType dnsmessage.Type) ([]byte, error) {
 	if !strings.HasSuffix(domain, ".") {
