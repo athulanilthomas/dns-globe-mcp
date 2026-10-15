@@ -1,6 +1,6 @@
 MCP_URL ?= http://localhost:8080/mcp
 DOMAIN ?= athulanilthomas.in
-RECORD_TYPE ?= AAAA
+RECORD_TYPE ?= A
 
 export MCP_URL DOMAIN RECORD_TYPE
 

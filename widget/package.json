@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mcp-b/global": "^6.0.2",
     "cobe": "^2.0.1"
   },
   "devDependencies": {

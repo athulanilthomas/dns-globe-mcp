@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@mcp-b/global':
+        specifier: ^6.0.2
+        version: 6.0.2
       cobe:
         specifier: ^2.0.1
         version: 2.0.1
@@ -20,6 +23,30 @@ importers:
         version: 2.3.3(vite@8.3.4)
 
 packages:
+
+  '@mcp-b/global@6.0.2':
+    resolution: {integrity: sha512-OimOb9kXoaJLzzvD/19MY4SCCLODozbsmySm2ZGk3Notql+/tCqgVHom9Pr9MM5ql/e43AsQBEJetdAWtnz/FQ==}
+    engines: {node: '>=20'}
+
+  '@mcp-b/transports@6.0.2':
+    resolution: {integrity: sha512-Y1FyGyw2Y/sTfe9Mdk/TfSPryeZnsnx/T/4K0MGsPdrbPc7zAjIAeBaw9eOplCSgPYaUTsetIB4sHFmcVUC7qw==}
+    engines: {node: '>=20'}
+
+  '@mcp-b/webmcp-polyfill@6.0.2':
+    resolution: {integrity: sha512-6j1tSL7LI5fJWVffofPm7kzHj/z4TeUi+vOM8NYO2zsQSFwUtqgMqJdGG2mVFVOma80ys0ikoB7uLtgoLw7/Og==}
+    engines: {node: '>=20'}
+
+  '@mcp-b/webmcp-ts-sdk@6.0.2':
+    resolution: {integrity: sha512-IWTiXV+cGIVPCg7sCcrzd79hxsZ5ZXd1353GPLknNoyZ4CF/9pmXixW04BujJuP9S+uX3bTKmXDfdbgziHcAnw==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/core@2.0.0':
+    resolution: {integrity: sha512-pJCEwGG7Lfr/+PQp9ZTwKXNeO5wzbfKL7H3MYpCorM4oFBoQrdjnBgEoqG+RjhsvS1FKrDbKux+M1HhlnGWqcA==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/server@2.0.0':
+    resolution: {integrity: sha512-YhHWdHfpFMQfd0prsEnxKeS3Qz3ytIGmsS0sth4KDjnacIT7hxk6hXHkJ9KysxlkvTM+WZAtQbbcUhdoP4Hvtw==}
+    engines: {node: '>=20'}
 
   '@oxc-project/types@0.153.0':
     resolution: {integrity: sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw==}
@@ -122,6 +149,9 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -324,7 +354,45 @@ packages:
       yaml:
         optional: true
 
+  webmcp-types@0.1.9:
+    resolution: {integrity: sha512-ibdkppgRDkQ/nvH541YS48kVt96OiuDr+d9JHnirAtI5k0coaFdo2QqCipbXyfwrteDC6xXwPoUGC9uS5ZGwfw==}
+
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
+
+  '@mcp-b/global@6.0.2':
+    dependencies:
+      '@mcp-b/transports': 6.0.2
+      '@mcp-b/webmcp-polyfill': 6.0.2
+      '@mcp-b/webmcp-ts-sdk': 6.0.2
+      '@modelcontextprotocol/server': 2.0.0
+
+  '@mcp-b/transports@6.0.2':
+    dependencies:
+      '@modelcontextprotocol/core': 2.0.0
+      '@modelcontextprotocol/server': 2.0.0
+
+  '@mcp-b/webmcp-polyfill@6.0.2':
+    dependencies:
+      webmcp-types: 0.1.9
+
+  '@mcp-b/webmcp-ts-sdk@6.0.2':
+    dependencies:
+      '@mcp-b/webmcp-polyfill': 6.0.2
+      '@modelcontextprotocol/server': 2.0.0
+      '@standard-schema/spec': 1.1.0
+      webmcp-types: 0.1.9
+
+  '@modelcontextprotocol/core@2.0.0':
+    dependencies:
+      zod: 4.6.7
+
+  '@modelcontextprotocol/server@2.0.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.0.0
+      zod: 4.6.7
 
   '@oxc-project/types@0.153.0': {}
 
@@ -374,6 +442,8 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
+
+  '@standard-schema/spec@1.1.0': {}
 
   braces@3.0.3:
     dependencies:
@@ -510,3 +580,7 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       fsevents: 2.3.3
+
+  webmcp-types@0.1.9: {}
+
+  zod@4.6.7: {}

@@ -1,4 +1,7 @@
+import "@mcp-b/global";
 import createGlobe from "cobe";
+import { SAMPLE } from "./data.js";
+import { registerTools } from "./webmcp-tools.js";
 
 const STATUSES = ["resolved", "stale", "pending", "error", "nxdomain"];
 
@@ -6,8 +9,8 @@ const STATUS_RGB = {
   resolved: [0.09, 0.64, 0.29],
   stale: [0.92, 0.55, 0.05],
   pending: [0.45, 0.45, 0.5],
-  error: [166, 25, 46],
-  nxdomain: [246, 130, 31]
+  error: [166 / 255, 25 / 255, 46 / 255],
+  nxdomain: [246 / 255, 130 / 255, 31 / 255]
 };
 
 const STATUS_TEXT = {
@@ -44,6 +47,14 @@ let theta = 0.25;
 let velocityPhi = 0;
 let velocityTheta = 0;
 let pointer = null;
+let focusTarget = null;
+let pausedUntil = 0;
+let currentResults = [];
+let activeId = null;
+
+const MARKER_SIZE = 0.03;
+const MARKER_SIZE_ACTIVE = 0.07;
+const PAUSE_MS = 6000;
 
 const globe = createGlobe(canvas, {
   devicePixelRatio: dpr,
@@ -85,12 +96,23 @@ const endDrag = () => (pointer = null);
 canvas.addEventListener("pointerup", endDrag);
 canvas.addEventListener("pointercancel", endDrag);
 
+const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
 (function animate() {
-  if (!pointer) {
+  if (pointer) {
+    focusTarget = null;
+  } else if (focusTarget) {
+    const dPhi = wrapAngle(focusTarget.phi - phi);
+    const dTheta = focusTarget.theta - theta;
+    phi += dPhi * 0.08;
+    theta += dTheta * 0.08;
+    if (Math.abs(dPhi) < 0.001 && Math.abs(dTheta) < 0.001) focusTarget = null;
+  } else {
+    const paused = performance.now() < pausedUntil;
     velocityPhi *= 0.95;
     velocityTheta *= 0.9;
-    phi += 0.003 + velocityPhi;
-    theta += velocityTheta + (0.25 - theta) * 0.02;
+    phi += (paused ? 0 : 0.003) + velocityPhi;
+    theta += velocityTheta + (paused ? 0 : (0.25 - theta) * 0.02);
   }
   globe.update({ phi, theta });
   requestAnimationFrame(animate);
@@ -99,6 +121,14 @@ canvas.addEventListener("pointercancel", endDrag);
 requestAnimationFrame(() => canvas.classList.add("ready"));
 
 let overlays = [];
+
+const markersFor = (results) =>
+  results.map((r) => ({
+    id: r.id,
+    location: [r.lat, r.lng],
+    size: r.id === activeId ? MARKER_SIZE_ACTIVE : MARKER_SIZE,
+    color: STATUS_RGB[r.status],
+  }));
 
 function renderGlobe(results) {
   overlays.forEach((n) => n.remove());
@@ -117,9 +147,7 @@ function renderGlobe(results) {
 
   globeEl.append(...overlays);
 
-  globe.update({
-    markers: results.map((r) => ({ id: r.id, location: [r.lat, r.lng], size: 0.03, color: STATUS_RGB[r.status] })),
-  });
+  globe.update({ markers: markersFor(results) });
 }
 
 function renderPanel(results) {
@@ -152,6 +180,9 @@ function focus(results) {
 
 function setResults(resolverResults) {
   const results = resolverResults.map((r, i) => ({ ...r, id: `resolver-${i}` }));
+  currentResults = results;
+  activeId = null;
+  focusTarget = null;
   renderGlobe(results);
   renderPanel(results);
   focus(results);
@@ -171,4 +202,63 @@ function render(sample) {
 
 window.updateGlobe = render;
 
-render(window.__DNS_DATA__ ?? []);
+const injected = window.__DNS_DATA__;
+render(Array.isArray(injected) ? { ...SAMPLE, results: injected } : Array.isArray(injected?.results) ? injected : SAMPLE);
+
+const toolResult = (payload, isError = false) => ({
+  content: [{ type: "text", text: JSON.stringify(payload) }],
+  ...(isError && { isError: true }),
+});
+
+const resolverNames = () => currentResults.map((r) => r.resolver);
+
+const faceLocation = (lat, lng) => [Math.PI - (toRad(lng) - Math.PI / 2), Math.max(-1, Math.min(1, toRad(lat)))];
+
+function focusResolver(args) {
+  const resolver = typeof args === "string" ? args : args?.resolver;
+  const wanted = typeof resolver === "string" ? resolver.trim().toLowerCase() : "";
+  const target = currentResults.find((r) => r.resolver.toLowerCase() === wanted);
+  if (!target) {
+    return toolResult({ error: `Unknown resolver ${JSON.stringify(resolver)}`, available: resolverNames() }, true);
+  }
+
+  const [targetPhi, targetTheta] = faceLocation(target.lat, target.lng);
+  focusTarget = { phi: targetPhi, theta: targetTheta };
+  pausedUntil = performance.now() + PAUSE_MS;
+  velocityPhi = velocityTheta = 0;
+  activeId = target.id;
+  globe.update({ markers: markersFor(currentResults) });
+
+  return toolResult({ resolver: target.resolver, status: target.status, records: target.records });
+}
+
+function getGlobeState() {
+  const active = currentResults.find((r) => r.id === activeId);
+  return toolResult({
+    highlighted: active?.resolver ?? null,
+    resolvers: currentResults.map(({ resolver, status, records, error }) => ({ resolver, status, records, error })),
+  });
+}
+
+window.__focusResolver = focusResolver;
+window.__getGlobeState = getGlobeState;
+
+registerTools([
+  {
+    name: "focus_resolver",
+    description: "Rotate the DNS globe to a resolver (e.g. Cloudflare, Google, Quad9, OpenDNS), highlight its marker, and return its status and records.",
+    inputSchema: {
+      type: "object",
+      properties: { resolver: { type: "string", description: "Resolver name, case-insensitive" } },
+      required: ["resolver"],
+    },
+    execute: focusResolver,
+  },
+  {
+    name: "get_globe_state",
+    description: "Get the highlighted resolver and the status, records and error of every resolver shown on the globe.",
+    inputSchema: { type: "object", properties: {} },
+    annotations: { readOnlyHint: true },
+    execute: getGlobeState,
+  },
+]);
