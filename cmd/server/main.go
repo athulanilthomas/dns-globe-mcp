@@ -8,6 +8,7 @@ import (
 
 	internalconfig "github.com/athulanilthomas/dns-globe-mcp/internal/config"
 	internalmcp "github.com/athulanilthomas/dns-globe-mcp/internal/mcp"
+	internalweb "github.com/athulanilthomas/dns-globe-mcp/internal/web"
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 	mcp.AddTool(server, dnsTool.Meta(), dnsTool.Implementation)
 
 	mux := http.NewServeMux()
+	mux.Handle("/", internalweb.Handler())
 	mux.Handle("/mcp", internalmcp.Handler(server))
 
 	log.Println("MCP server listening on", config.Port, "at /mcp")
