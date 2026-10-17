@@ -1,7 +1,8 @@
 "$schema" = "https://openapi.vercel.sh/vercel.json"
 framework = "go"
+
+ignoreCommand = "git diff --quiet HEAD^ HEAD -- . ':!README.md' ':!Makefile' ':!.claude' ':!.github'"
 installCommand = "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR; npx --yes pnpm@10 --dir widget install --frozen-lockfile"
 
-# Widget must be built first: Go embeds it at compile time.
 buildCommand = "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR; npx --yes pnpm@10 --dir widget build --outDir ../internal/mcp/dist --emptyOutDir && go build -ldflags '-s -w' -o bin/server ./cmd/server"
 cleanUrls = true
