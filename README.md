@@ -19,11 +19,27 @@ It queries Cloudflare, Google, Quad9 and OpenDNS in parallel over DNS-over-HTTPS
 
 The result is a short text summary plus `structuredContent` (`domain`, `recordType`, `results`).
 
+## Sample prompts
+
+- "Look up the A record for example.com."
+- "What are the MX records for gmail.com?"
+- "Show the TXT records for github.com on the globe."
+- "Do all resolvers return the same nameservers for cloudflare.com?"
+- "I just changed the A record for mysite.com. Which resolvers are returning something different?"
+- "Does thisdomaindoesnotexist.example resolve anywhere?"
+
+With WebMCP enabled (see [WebMCP tools in Chrome](#webmcp-tools-in-chrome)), you can follow up with:
+
+- "Focus on Quad9."
+- "Which resolvers haven't resolved?"
+
 ## Usage
 
 The MCP endpoint is `https://lab.athulanilthomas.in/mcp`. To run it locally, see [Run locally](#run-locally) and use `http://localhost:8080/mcp` instead.
 
-### Cloudflare AI Playground
+### Cloudflare AI Playground (recommended)
+
+The quickest way to try it: no install or config files needed.
 
 1. Open [playground.ai.cloudflare.com](https://playground.ai.cloudflare.com).
 2. In the MCP servers section of the sidebar, enter the endpoint URL and click **Connect**.
