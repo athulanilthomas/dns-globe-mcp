@@ -21,6 +21,7 @@ func main() {
 
 	dnsTool := internalmcp.DnsPropagationTool{}
 	mcp.AddTool(server, dnsTool.Meta(), dnsTool.Implementation)
+	internalmcp.AddWidgetResource(server)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", internalweb.Handler())

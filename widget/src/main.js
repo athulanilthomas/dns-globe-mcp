@@ -1,5 +1,6 @@
 import "@mcp-b/global";
 import createGlobe from "cobe";
+import { App } from "@modelcontextprotocol/ext-apps/app-with-deps";
 import { SAMPLE } from "./data.js";
 import { registerTools } from "./webmcp-tools.js";
 
@@ -202,8 +203,18 @@ function render(sample) {
 
 window.updateGlobe = render;
 
-const injected = window.__DNS_DATA__;
-render(Array.isArray(injected) ? { ...SAMPLE, results: injected } : Array.isArray(injected?.results) ? injected : SAMPLE);
+const app = new App({ name: "dns-globe", version: "1.0.0" });
+
+app.ontoolresult = (result) => {
+  const data = result.structuredContent;
+  if (Array.isArray(data?.results)) render(data);
+};
+
+if (window.parent !== window) {
+  app.connect().catch((err) => console.warn("[dns-globe] MCP Apps connect failed:", err));
+} else {
+  render(SAMPLE);
+}
 
 const toolResult = (payload, isError = false) => ({
   content: [{ type: "text", text: JSON.stringify(payload) }],
