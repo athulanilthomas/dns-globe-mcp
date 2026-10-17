@@ -19,7 +19,7 @@ func AddWidgetResource(server *mcp.Server) {
 	server.AddResource(&mcp.Resource{
 		Name:        "dns-globe-widget",
 		Title:       "DNS Globe",
-		Description: "Interactive globe showing DNS propagation results",
+		Description: "Interactive globe showing DNS lookup results",
 		URI:         WidgetURI,
 		MIMEType:    WidgetMIMEType,
 	}, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {

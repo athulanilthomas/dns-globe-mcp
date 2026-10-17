@@ -161,7 +161,7 @@ func fail(r RegionResult, err error) RegionResult {
 	return r
 }
 
-func CheckDNSPropagation(ctx context.Context, domain string, recordType string) ([]RegionResult, error) {
+func LookupRecords(ctx context.Context, domain string, recordType string) ([]RegionResult, error) {
 	wg := &sync.WaitGroup{}
 
 	results := make([]RegionResult, len(providers))

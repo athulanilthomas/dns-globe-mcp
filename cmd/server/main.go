@@ -19,7 +19,7 @@ func main() {
 		log.Fatal("failed to construct MCP server")
 	}
 
-	dnsTool := internalmcp.DnsPropagationTool{}
+	dnsTool := internalmcp.LookupDnsRecordsTool{}
 	mcp.AddTool(server, dnsTool.Meta(), dnsTool.Implementation)
 	internalmcp.AddWidgetResource(server)
 

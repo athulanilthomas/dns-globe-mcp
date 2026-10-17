@@ -12,23 +12,23 @@ type Tool[I any, O any] interface {
 	Meta() *mcp.Tool
 	Implementation(ctx context.Context, req *mcp.CallToolRequest, input I) (*mcp.CallToolResult, O, error)
 }
-type DnsPropagationTool struct{}
+type LookupDnsRecordsTool struct{}
 
-type DnsPropagationInput struct {
+type LookupDnsRecordsInput struct {
 	Domain     string `json:"domain" jsonschema:"the domain name to check, e.g. example.com"`
 	RecordType string `json:"recordType" jsonschema:"DNS record type, e.g. A, AAAA, MX, TXT"`
 }
 
-type DnsPropagationOutput struct {
+type LookupDnsRecordsOutput struct {
 	Domain     string             `json:"domain"`
 	RecordType string             `json:"recordType"`
 	Results    []dns.RegionResult `json:"results"`
 }
 
-func (t *DnsPropagationTool) Meta() *mcp.Tool {
+func (t *LookupDnsRecordsTool) Meta() *mcp.Tool {
 	return &mcp.Tool{
-		Name:        "check_dns_propagation",
-		Description: "Queries public DNS resolvers (Cloudflare, Google, Quad9, OpenDNS) over DNS-over-HTTPS for a domain and record type, and reports each resolver's status (resolved, stale, pending, error, nxdomain) and returned records. Use it to check whether a DNS change has propagated. Renders an interactive globe of the results.",
+		Name:        "lookup_dns_records",
+		Description: "Queries public DNS resolvers (Cloudflare, Google, Quad9, OpenDNS) over DNS-over-HTTPS for a domain and record type, and reports each resolver's status (resolved, pending, error, nxdomain) and returned records. Use it to check whether a DNS change has propagated. Renders an interactive globe of the results.",
 		Meta: mcp.Meta{
 			"ui":             map[string]any{"resourceUri": WidgetURI},
 			"ui/resourceUri": WidgetURI,
@@ -36,17 +36,17 @@ func (t *DnsPropagationTool) Meta() *mcp.Tool {
 	}
 }
 
-func (t *DnsPropagationTool) Implementation(ctx context.Context, req *mcp.CallToolRequest, input DnsPropagationInput) (
+func (t *LookupDnsRecordsTool) Implementation(ctx context.Context, req *mcp.CallToolRequest, input LookupDnsRecordsInput) (
 	*mcp.CallToolResult,
-	DnsPropagationOutput,
+	LookupDnsRecordsOutput,
 	error,
 ) {
-	results, err := dns.CheckDNSPropagation(ctx, input.Domain, input.RecordType)
+	results, err := dns.LookupRecords(ctx, input.Domain, input.RecordType)
 	if err != nil {
-		return nil, DnsPropagationOutput{}, err
+		return nil, LookupDnsRecordsOutput{}, err
 	}
 
-	output := DnsPropagationOutput{
+	output := LookupDnsRecordsOutput{
 		Domain:     input.Domain,
 		RecordType: input.RecordType,
 		Results:    results,
@@ -60,4 +60,4 @@ func (t *DnsPropagationTool) Implementation(ctx context.Context, req *mcp.CallTo
 	return result, output, nil
 }
 
-var _ Tool[DnsPropagationInput, DnsPropagationOutput] = (*DnsPropagationTool)(nil)
+var _ Tool[LookupDnsRecordsInput, LookupDnsRecordsOutput] = (*LookupDnsRecordsTool)(nil)
