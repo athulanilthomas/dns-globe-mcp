@@ -3,7 +3,7 @@ package mcp
 import (
 	"context"
 
-	"github.com/athulanilthomas/dns-globe-mcp/server/internal/dns"
+	"github.com/athulanilthomas/dns-globe-mcp/internal/dns"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

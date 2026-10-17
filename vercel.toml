@@ -1,0 +1,7 @@
+"$schema" = "https://openapi.vercel.sh/vercel.json"
+framework = "go"
+installCommand = "pnpm --dir widget install --frozen-lockfile"
+
+# Widget must be built first: Go embeds it at compile time.
+buildCommand = "pnpm --dir widget build --outDir ../internal/mcp/dist --emptyOutDir && go build -ldflags '-s -w' -o bin/server ./cmd/server"
+cleanUrls = true

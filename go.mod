@@ -1,4 +1,4 @@
-module github.com/athulanilthomas/dns-globe-mcp/server
+module github.com/athulanilthomas/dns-globe-mcp
 
 go 1.27.1
 

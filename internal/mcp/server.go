@@ -1,7 +1,7 @@
 package mcp
 
 import (
-	"github.com/athulanilthomas/dns-globe-mcp/server/internal/config"
+	"github.com/athulanilthomas/dns-globe-mcp/internal/config"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

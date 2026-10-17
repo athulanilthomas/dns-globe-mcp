@@ -3,7 +3,7 @@ node_modules/
 
 # Go Builds
 bin/
-server/internal/mcp/widget/
+internal/mcp/dist/
 
 # Build output
 dist/

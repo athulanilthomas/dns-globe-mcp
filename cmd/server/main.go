@@ -6,8 +6,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	internalconfig "github.com/athulanilthomas/dns-globe-mcp/server/internal/config"
-	internalmcp "github.com/athulanilthomas/dns-globe-mcp/server/internal/mcp"
+	internalconfig "github.com/athulanilthomas/dns-globe-mcp/internal/config"
+	internalmcp "github.com/athulanilthomas/dns-globe-mcp/internal/mcp"
 )
 
 func main() {

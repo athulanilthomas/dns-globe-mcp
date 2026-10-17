@@ -16,4 +16,4 @@ call-dns-propagation:
 		"$(MCP_URL)"
 
 build-widget:
-	cd widget && pnpm build --outDir ../server/internal/mcp/widget --emptyOutDir
+	cd widget && pnpm build --outDir ../internal/mcp/dist --emptyOutDir

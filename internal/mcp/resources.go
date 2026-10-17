@@ -9,7 +9,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-//go:embed widget/index.html
+//go:embed dist/index.html
 var widgetHTML string
 
 const (
